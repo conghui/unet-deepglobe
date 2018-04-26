@@ -3,11 +3,10 @@ from logging import getLogger, Formatter, StreamHandler, INFO
 from pathlib import Path
 import sys
 import warnings
-import os
 
 
 MODEL_NAME = 'v17'
-MODEL_DIR = os.environ['PROJ_BASE_PATH'] + "/data/working/models/{}".format(MODEL_NAME)
+MODEL_DIR = "/root/data/working/models/{}".format(MODEL_NAME)
 FMT_TESTPOLY_PATH = MODEL_DIR + "/{}_poly.csv"
 
 LOGFORMAT = '%(asctime)s %(levelname)s %(message)s'
@@ -46,7 +45,7 @@ def directory_name_to_area_id(datapath):
 
     Usage:
 
-        >>> directory_name_to_area_id("/data/test/AOI_2_Vegas")
+        >>> directory_name_to_area_id("/root/data/test/AOI_2_Vegas")
         2
     """
     dir_name = Path(datapath).name
@@ -102,7 +101,7 @@ def _merge(area_id_list, output_fn):
 
 def merge():
     if len(sys.argv) < 3:
-        print("Usage: merge.py [/data/test/AOI_2_Vegas_Test ...] out.csv")
+        print("Usage: merge.py [/root/data/test/AOI_2_Vegas_Test ...] out.csv")
 
     test_path_list = sys.argv[1:-1]
     output_fn = sys.argv[-1]

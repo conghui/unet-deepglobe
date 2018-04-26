@@ -40,19 +40,17 @@ import shapely.wkt
 import shapely.ops
 import shapely.geometry
 
-FIT_BATCH_SIZE = 32 if os.environ['FIT_BATCH_SIZE'] == '' else int(os.environ['FIT_BATCH_SIZE'])
-PRED_BATCH_SIZE = 64 if os.environ['PRED_BATCH_SIZE'] == '' else int(os.environ['PRED_BATCH_SIZE'])
 
 MODEL_NAME = 'v9s'
 ORIGINAL_SIZE = 650
 INPUT_SIZE = 256
 
 LOGFORMAT = '%(asctime)s %(levelname)s %(message)s'
-BASE_DIR        = os.environ['PROJ_BASE_PATH'] + "/data/train"
-WORKING_DIR     = os.environ['PROJ_BASE_PATH'] + "/data/working"
-IMAGE_DIR       = os.environ['PROJ_BASE_PATH'] + "/data/working/images/{}".format('v5')
-MODEL_DIR       = os.environ['PROJ_BASE_PATH'] + "/data/working/models/{}".format(MODEL_NAME)
-FN_SOLUTION_CSV = os.environ['PROJ_BASE_PATH'] + "/data/output/{}.csv".format(MODEL_NAME)
+BASE_DIR        = "/root/data/train"
+WORKING_DIR     = "/root/data/working"
+IMAGE_DIR       = "/root/data/working/images/{}".format('v5')
+MODEL_DIR       = "/root/data/working/models/{}".format(MODEL_NAME)
+FN_SOLUTION_CSV = "/root/data/output/{}.csv".format(MODEL_NAME)
 
 # Parameters
 MIN_POLYGON_AREA = 30
@@ -130,8 +128,7 @@ handler = StreamHandler()
 handler.setLevel(INFO)
 handler.setFormatter(Formatter(LOGFORMAT))
 
-# fh_handler = FileHandler(".{}.log".format(MODEL_NAME))
-fh_handler = FileHandler("{}/{}.log".format(os.environ['PROJ_BASE_PATH'] + '/data', MODEL_NAME))
+fh_handler = FileHandler(".{}.log".format(MODEL_NAME))
 fh_handler.setFormatter(Formatter(LOGFORMAT))
 logger = getLogger('spacenet2')
 logger.setLevel(INFO)
@@ -152,7 +149,7 @@ def directory_name_to_area_id(datapath):
 
     Usage:
 
-        >>> directory_name_to_area_id("/data/test/AOI_2_Vegas")
+        >>> directory_name_to_area_id("/root/data/test/AOI_2_Vegas")
         2
     """
     dir_name = Path(datapath).name
@@ -1060,7 +1057,7 @@ def _internal_test_predict_best_param(area_id,
     # Prediction phase
     logger.info("Prediction phase: {}".format(prefix))
 
-    X_mean = get_mul_mean_image(area_id) # read multispectral images
+    X_mean = get_mul_mean_image(area_id)
 
     # Load model weights
     # Predict and Save prediction result
@@ -1076,7 +1073,7 @@ def _internal_test_predict_best_param(area_id,
     y_pred = model.predict_generator(
         generate_test_batch(
             area_id,
-            batch_size=PRED_BATCH_SIZE,
+            batch_size=64,
             immean=X_mean,
             enable_tqdm=True,
         ),
@@ -1104,7 +1101,7 @@ def _internal_test_predict_best_param(area_id,
 
 def _internal_test(area_id, enable_tqdm=False):
     prefix = area_id_to_prefix(area_id)
-    y_pred = _internal_test_predict_best_param(area_id, save_pred=False)
+    y_pred = _internal_test_predict_best_param(area_id, save_pred=True)
 
     param = _get_model_parameter(area_id)
     min_th = param['min_poly_area']
@@ -1479,7 +1476,7 @@ def _internal_validate_predict(area_id,
     y_pred = model.predict_generator(
         generate_valtest_batch(
             area_id,
-            batch_size=PRED_BATCH_SIZE,
+            batch_size=64,
             immean=X_mean,
             enable_tqdm=enable_tqdm,
         ),
@@ -1668,44 +1665,26 @@ def validate(datapath):
     X_trn = X_trn - X_mean
 
     model = get_unet()
-
-    # load weights here
-    is_load_weights = False
-    start_epoch = 1
-    num_epoch  = 200
-    logger.info('starting epoch: {}'.format(start_epoch))
-
-    if is_load_weights:
-      fn_model = FMT_VALMODEL_PATH.format(prefix + '_{epoch:02d}')
-      fn_model = fn_model.format(epoch=start_epoch)
-      logger.info('start loading weight: {}'.format(fn_model))
-      model.load_weights(fn_model)
-
     model_checkpoint = ModelCheckpoint(
         FMT_VALMODEL_PATH.format(prefix + "_{epoch:02d}"),
         monitor='val_jaccard_coef_int',
         save_best_only=False)
-
     model_earlystop = EarlyStopping(
         monitor='val_jaccard_coef_int',
-        patience=10, # 10 originally
+        patience=10,
         verbose=0,
         mode='max')
-
     model_history = History()
 
     df_train = pd.read_csv(FMT_VALTRAIN_IMAGELIST_PATH.format(prefix=prefix))
     logger.info("Fit")
-
     model.fit(
         X_trn, y_trn,
-        batch_size=FIT_BATCH_SIZE,
-        nb_epoch=num_epoch, # 200 originally
+        nb_epoch=200,
         shuffle=True,
         verbose=1,
         validation_data=(X_val, y_val),
         callbacks=[model_checkpoint, model_earlystop, model_history])
-
     model.save_weights(FMT_VALMODEL_LAST_PATH.format(prefix))
 
     # Save evaluation history

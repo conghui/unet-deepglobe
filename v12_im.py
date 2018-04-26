@@ -32,13 +32,13 @@ INPUT_SIZE = 256
 STRIDE_SZ = 197
 
 LOGFORMAT = '%(asctime)s %(levelname)s %(message)s'
-BASE_DIR        = os.environ['PROJ_BASE_PATH'] + "/data/train"
-BASE_TEST_DIR   = os.environ['PROJ_BASE_PATH'] + "/data/test"
-WORKING_DIR     = os.environ['PROJ_BASE_PATH'] + "/data/working"
-IMAGE_DIR       = os.environ['PROJ_BASE_PATH'] + "/data/working/images/{}".format('v12')
-V5_IMAGE_DIR    = os.environ['PROJ_BASE_PATH'] + "/data/working/images/{}".format('v5')
-MODEL_DIR       = os.environ['PROJ_BASE_PATH'] + "/data/working/models/{}".format(MODEL_NAME)
-FN_SOLUTION_CSV = os.environ['PROJ_BASE_PATH'] + "/data/output/{}.csv".format(MODEL_NAME)
+BASE_DIR        = "/root/data/train"
+BASE_TEST_DIR   = "/root/data/test"
+WORKING_DIR     = "/root/data/working"
+IMAGE_DIR       = "/root/data/working/images/{}".format('v12')
+V5_IMAGE_DIR    = "/root/data/working/images/{}".format('v5')
+MODEL_DIR       = "/root/data/working/models/{}".format(MODEL_NAME)
+FN_SOLUTION_CSV = "/root/data/output/{}.csv".format(MODEL_NAME)
 
 # Input files
 FMT_TRAIN_SUMMARY_PATH = str(
@@ -105,15 +105,12 @@ handler = StreamHandler()
 handler.setLevel(INFO)
 handler.setFormatter(Formatter('%(asctime)s %(levelname)s %(message)s'))
 
-fh_handler = FileHandler("{}/{}.log".format(os.environ['PROJ_BASE_PATH'] + '/data', MODEL_NAME))
-fh_handler.setFormatter(Formatter(LOGFORMAT))
 logger = getLogger('spacenet2')
 logger.setLevel(INFO)
 
 
 if __name__ == '__main__':
     logger.addHandler(handler)
-    logger.addHandler(fh_handler)
 
 
 # Fix seed for reproducibility
@@ -625,9 +622,6 @@ def preproc_test(datapath):
     else:
         logger.info("Generate TEST MUL_STORE (test)")
         prep_mul_image_store_test(area_id, datapath)
-
-    # always generate it!
-    # prep_mul_image_store_test(area_id, datapath)
 
     logger.info("preproc_test for {} ... done".format(prefix))
 

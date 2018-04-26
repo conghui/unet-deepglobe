@@ -30,10 +30,9 @@ MODEL_NAME = 'v5'
 ORIGINAL_SIZE = 650
 INPUT_SIZE = 256
 
-LOGFORMAT = '%(asctime)s %(levelname)s %(message)s'
-BASE_TRAIN_DIR = os.environ['PROJ_BASE_PATH'] + "/data/train"
-WORKING_DIR    = os.environ['PROJ_BASE_PATH'] + "/data/working"
-IMAGE_DIR      = os.environ['PROJ_BASE_PATH'] + "/data/working/images/v5"
+BASE_TRAIN_DIR = "/root/data/train"
+WORKING_DIR    = "/root/data/working"
+IMAGE_DIR      = "/root/data/working/images/v5"
 
 # Input files
 FMT_TRAIN_SUMMARY_PATH = str(
@@ -81,15 +80,12 @@ handler = StreamHandler()
 handler.setLevel(INFO)
 handler.setFormatter(Formatter('%(asctime)s %(levelname)s %(message)s'))
 
-fh_handler = FileHandler("{}/{}.log".format(os.environ['PROJ_BASE_PATH'] + '/data', MODEL_NAME))
-fh_handler.setFormatter(Formatter(LOGFORMAT))
 logger = getLogger('spacenet2')
 logger.setLevel(INFO)
 
 
 if __name__ == '__main__':
     logger.addHandler(handler)
-    logger.addHandler(fh_handler)
 
 
 # Fix seed for reproducibility
@@ -102,7 +98,7 @@ def directory_name_to_area_id(datapath):
 
     Usage:
 
-        >>> directory_name_to_area_id("/data/test/AOI_2_Vegas")
+        >>> directory_name_to_area_id("/root/data/test/AOI_2_Vegas")
         2
     """
     dir_name = Path(datapath).name
@@ -851,16 +847,6 @@ def preproc_test(datapath):
     else:
         logger.info("Generate MUL_STORE (test)")
         prep_mul_image_store_test(area_id, datapath)
-
-    # always generate it!
-    # logger.info("Generate TEST IMAGELIST for inference")
-    # prep_test_imagelist(area_id, datapath)
-
-    # logger.info("Generate RGB_STORE (test)")
-    # prep_rgb_image_store_test(area_id, datapath)
-
-    # logger.info("Generate MUL_STORE (test)")
-    # prep_mul_image_store_test(area_id, datapath)
 
     logger.info("preproc_test for {} ... done".format(prefix))
 

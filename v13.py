@@ -39,24 +39,17 @@ import shapely.wkt
 import shapely.ops
 import shapely.geometry
 
-IS_RESTART  = True if os.environ['IS_RESTART'] == '1' else False
-START_EPOCH = int(os.environ['START_EPOCH']) if IS_RESTART else 0
-STOP_EPOCH  = int(os.environ['STOP_EPOCH'])
 
-FIT_BATCH_SIZE = 32 if os.environ['FIT_BATCH_SIZE'] == '' else int(os.environ['FIT_BATCH_SIZE'])
-PRED_BATCH_SIZE = 64 if os.environ['PRED_BATCH_SIZE'] == '' else int(os.environ['PRED_BATCH_SIZE'])
-
-# ---------------------------------------------------------
 MODEL_NAME = 'v13'
 ORIGINAL_SIZE = 650
 INPUT_SIZE = 256
 STRIDE_SZ = 197
 
-BASE_DIR      = os.environ['PROJ_BASE_PATH'] + "/data/train"
-BASE_TEST_DIR = os.environ['PROJ_BASE_PATH'] + "/data/test"
-WORKING_DIR   = os.environ['PROJ_BASE_PATH'] + "/data/working"
-IMAGE_DIR     = os.environ['PROJ_BASE_PATH'] + "/data/working/images/{}".format('v12')
-V5_IMAGE_DIR  = os.environ['PROJ_BASE_PATH'] + "/data/working/images/{}".format('v5')
+BASE_DIR      = "/root/data/train"
+BASE_TEST_DIR = "/root/data/test"
+WORKING_DIR   = "/root/data/working"
+IMAGE_DIR     = "/root/data/working/images/{}".format('v12')
+V5_IMAGE_DIR  = "/root/data/working/images/{}".format('v5')
 
 # ---------------------------------------------------------
 # Parameters
@@ -112,7 +105,7 @@ FMT_MULMEAN = IMAGE_DIR + "/{}_mulmean.h5"
 
 # ---------------------------------------------------------
 # Model files
-MODEL_DIR = os.environ['PROJ_BASE_PATH'] + "/data/working/models/{}".format(MODEL_NAME)
+MODEL_DIR = "/root/data/working/models/{}".format(MODEL_NAME)
 FMT_VALMODEL_PATH = MODEL_DIR + "/{}_val_weights.h5"
 FMT_FULLMODEL_PATH = MODEL_DIR + "/{}_full_weights.h5"
 FMT_VALMODEL_HIST = MODEL_DIR + "/{}_val_hist.csv"
@@ -128,7 +121,7 @@ FMT_VALTESTTRUTH_PATH = MODEL_DIR + "/{}_eval_poly_truth.csv"
 FMT_VALTESTPOLY_OVALL_PATH = MODEL_DIR + "/eval_poly.csv"
 FMT_VALTESTTRUTH_OVALL_PATH = MODEL_DIR + "/eval_poly_truth.csv"
 FMT_TESTPOLY_PATH = MODEL_DIR + "/{}_poly.csv"
-FN_SOLUTION_CSV = os.environ['PROJ_BASE_PATH'] + "data/output/{}.csv".format(MODEL_NAME)
+FN_SOLUTION_CSV = "/root/data/output/{}.csv".format(MODEL_NAME)
 
 # ---------------------------------------------------------
 # Model related files (others)
@@ -141,9 +134,7 @@ warnings.simplefilter("ignore", UserWarning)
 handler = StreamHandler()
 handler.setLevel(INFO)
 handler.setFormatter(Formatter('%(asctime)s %(levelname)s %(message)s'))
-
-# fh_handler = FileHandler(".{}.log".format(MODEL_NAME))
-fh_handler = FileHandler("{}/{}.log".format(os.environ['PROJ_BASE_PATH'] + '/data', MODEL_NAME))
+fh_handler = FileHandler(".{}.log".format(MODEL_NAME))
 fh_handler.setFormatter(Formatter('%(asctime)s %(levelname)s %(message)s'))
 logger = getLogger(__name__)
 logger.setLevel(INFO)
@@ -163,7 +154,7 @@ def directory_name_to_area_id(datapath):
 
     Usage:
 
-        >>> directory_name_to_area_id("/data/test/AOI_2_Vegas")
+        >>> directory_name_to_area_id("/root/data/test/AOI_2_Vegas")
         2
     """
     dir_name = Path(datapath).name
@@ -341,7 +332,7 @@ def _internal_test_predict_best_param(area_id,
     y_pred = model.predict_generator(
         generate_test_batch(
             area_id,
-            batch_size=PRED_BATCH_SIZE,
+            batch_size=64,
             immean=X_mean,
             enable_tqdm=True,
         ),
@@ -370,7 +361,7 @@ def _internal_test(area_id):
     prefix = area_id_to_prefix(area_id)
     param = _get_model_parameter(area_id)
     min_th = param['min_poly_area']
-    y_pred = _internal_test_predict_best_param(area_id, save_pred=False)
+    y_pred = _internal_test_predict_best_param(area_id, save_pred=True)
 
     # Postprocessing phase
     logger.info("Postprocessing phase")
@@ -457,7 +448,7 @@ def _internal_validate_predict(area_id,
     y_pred = model.predict_generator(
         generate_valtest_batch(
             area_id,
-            batch_size=PRED_BATCH_SIZE,
+            batch_size=64,
             immean=X_mean,
             enable_tqdm=enable_tqdm,
         ),
@@ -1724,42 +1715,37 @@ def evalfscore(datapath):
     prefix = area_id_to_prefix(area_id)
     logger.info("Evaluate fscore on validation set: {}".format(prefix))
 
-
     # for each epoch
-    df_hist = pd.read_csv(FMT_VALMODEL_HIST.format(prefix))
-    df_hist.loc[:, 'epoch'] = list(range(1, len(df_hist) + 1))
+    # if not Path(FMT_VALMODEL_EVALHIST.format(prefix)).exists():
+    if True:
+        df_hist = pd.read_csv(FMT_VALMODEL_HIST.format(prefix))
+        df_hist.loc[:, 'epoch'] = list(range(1, len(df_hist) + 1))
 
-    rows = []
-    for zero_base_epoch in range(START_EPOCH if IS_RESTART else 0, len(df_hist)):
-        logger.info(">>> Epoch: {}".format(zero_base_epoch))
+        rows = []
+        for zero_base_epoch in range(0, len(df_hist)):
+            logger.info(">>> Epoch: {}".format(zero_base_epoch))
 
-        _internal_validate_fscore_wo_pred_file(
-            area_id,
-            epoch=zero_base_epoch,
-            enable_tqdm=True,
-            min_th=MIN_POLYGON_AREA)
-        evaluate_record = _calc_fscore_per_aoi(area_id)
-        evaluate_record['zero_base_epoch'] = zero_base_epoch
-        evaluate_record['min_area_th'] = MIN_POLYGON_AREA
-        evaluate_record['area_id'] = area_id
-        logger.info("\n" + json.dumps(evaluate_record, indent=4))
-        rows.append(evaluate_record)
+            _internal_validate_fscore_wo_pred_file(
+                area_id,
+                epoch=zero_base_epoch,
+                enable_tqdm=True,
+                min_th=MIN_POLYGON_AREA)
+            evaluate_record = _calc_fscore_per_aoi(area_id)
+            evaluate_record['zero_base_epoch'] = zero_base_epoch
+            evaluate_record['min_area_th'] = MIN_POLYGON_AREA
+            evaluate_record['area_id'] = area_id
+            logger.info("\n" + json.dumps(evaluate_record, indent=4))
+            rows.append(evaluate_record)
 
-    if IS_RESTART:
-      pd.DataFrame(rows).to_csv(
-          FMT_VALMODEL_EVALHIST.format(prefix),
-          index=False, mode='a', header=False)
-    else:
-      pd.DataFrame(rows).to_csv(
-          FMT_VALMODEL_EVALHIST.format(prefix),
-          index=False)
+        pd.DataFrame(rows).to_csv(
+            FMT_VALMODEL_EVALHIST.format(prefix),
+            index=False)
 
     # find best min-poly-threshold
     df_evalhist = pd.read_csv(FMT_VALMODEL_EVALHIST.format(prefix))
     best_row = df_evalhist.sort_values(by='fscore', ascending=False).iloc[0]
     best_epoch = int(best_row.zero_base_epoch)
     best_fscore = best_row.fscore
-    logger.info('best_epoch: {}'.format(best_epoch))
 
     # optimize min area th
     rows = []
@@ -1807,18 +1793,6 @@ def validate(datapath):
 
     logger.info("Instantiate U-Net model")
     model = get_unet()
-
-    start_epoch = START_EPOCH
-    stop_epoch  = STOP_EPOCH
-
-    if IS_RESTART:
-      fn = FMT_TESTPRED_PATH.format(prefix)
-      fn_model = FMT_VALMODEL_PATH.format(prefix + '_{epoch:02d}')
-      fn_model = fn_model.format(epoch=start_epoch - 1)
-      model.load_weights(fn_model)
-      logger.info('start from epoch {}'.format(start_epoch))
-      logger.info('load weights from epoch: {}'.format(start_epoch - 1))
-
     model_checkpoint = ModelCheckpoint(
         FMT_VALMODEL_PATH.format(prefix + "_{epoch:02d}"),
         monitor='val_jaccard_coef_int',
@@ -1830,15 +1804,14 @@ def validate(datapath):
         mode='max')
     model_history = History()
 
-    logger.info('FIT_BATCH_SIZE={}'.format(FIT_BATCH_SIZE))
+    # logger.info('FIT_BATCH_SIZE={}'.format(FIT_BATCH_SIZE))
     df_train = pd.read_csv(FMT_VALTRAIN_IMAGELIST_PATH.format(
         prefix=prefix))
     logger.info("Fit")
     model.fit_generator(
-        generate_valtrain_batch(area_id, batch_size=FIT_BATCH_SIZE, immean=X_mean),
+        generate_valtrain_batch(area_id, batch_size=2, immean=X_mean),
         samples_per_epoch=len(df_train) * 9,
-        initial_epoch=start_epoch,
-        nb_epoch=stop_epoch,
+        nb_epoch=35,
         verbose=1,
         validation_data=(X_val, y_val),
         callbacks=[model_checkpoint, model_earlystop, model_history])
@@ -1846,13 +1819,8 @@ def validate(datapath):
     model.save_weights(FMT_VALMODEL_LAST_PATH.format(prefix))
 
     # Save evaluation history
-    if IS_RESTART:
-      pd.DataFrame(model_history.history).to_csv(
-          FMT_VALMODEL_HIST.format(prefix), index=False, mode='a', header=False)
-    else:
-      pd.DataFrame(model_history.history).to_csv(
-          FMT_VALMODEL_HIST.format(prefix), index=False)
-
+    pd.DataFrame(model_history.history).to_csv(
+        FMT_VALMODEL_HIST.format(prefix), index=False)
     logger.info(">> validate sub-command: {} ... Done".format(prefix))
 
 

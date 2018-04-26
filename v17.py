@@ -29,7 +29,7 @@ INPUT_SIZE = 256
 STRIDE_SZ = 197
 
 LOGFORMAT = '%(asctime)s %(levelname)s %(message)s'
-BASE_DIR = os.environ['PROJ_BASE_PATH'] + "/data/train"
+BASE_DIR = "/root/data/train"
 
 # Parameters
 MIN_POLYGON_AREA = 30
@@ -42,12 +42,12 @@ FMT_TRAIN_SUMMARY_PATH = str(
 
 # ---------------------------------------------------------
 # Image list, Image container and mask container
-V5_IMAGE_DIR = os.environ['PROJ_BASE_PATH'] + "/data/working/images/{}".format('v5')
+V5_IMAGE_DIR = "/root/data/working/images/{}".format('v5')
 FMT_VALTEST_IMAGELIST_PATH = V5_IMAGE_DIR + "/{prefix:s}_valtest_ImageId.csv"
 FMT_TEST_IMAGELIST_PATH = V5_IMAGE_DIR + "/{prefix:s}_test_ImageId.csv"
 
 # Model files
-MODEL_DIR = os.environ['PROJ_BASE_PATH'] + "/data/working/models/{}".format(MODEL_NAME)
+MODEL_DIR = "/root/data/working/models/{}".format(MODEL_NAME)
 FMT_VALTESTPRED_PATH = MODEL_DIR + "/{}_eval_pred.h5"
 FMT_VALTESTPOLY_PATH = MODEL_DIR + "/{}_eval_poly.csv"
 FMT_VALTESTTRUTH_PATH = MODEL_DIR + "/{}_eval_poly_truth.csv"
@@ -58,7 +58,7 @@ FMT_VALMODEL_EVALTHHIST = MODEL_DIR + "/{}_val_evalhist_th.csv"
 # ---------------------------------------------------------
 # Prediction & polygon result
 FMT_TESTPOLY_PATH = MODEL_DIR + "/{}_poly.csv"
-FN_SOLUTION_CSV = os.environ['PROJ_BASE_PATH'] + "/data/{}.csv".format(MODEL_NAME)
+FN_SOLUTION_CSV = "/root/data/{}.csv".format(MODEL_NAME)
 
 # Logger
 warnings.simplefilter("ignore", UserWarning)
@@ -66,9 +66,7 @@ warnings.simplefilter("ignore", FutureWarning)
 handler = StreamHandler()
 handler.setLevel(INFO)
 handler.setFormatter(Formatter(LOGFORMAT))
-
-# fh_handler = FileHandler(".{}.log".format(MODEL_NAME))
-fh_handler = FileHandler("{}/{}.log".format(os.environ['PROJ_BASE_PATH'] + '/data', MODEL_NAME))
+fh_handler = FileHandler(".{}.log".format(MODEL_NAME))
 fh_handler.setFormatter(Formatter(LOGFORMAT))
 logger = getLogger('spacenet2')
 logger.setLevel(INFO)
@@ -85,7 +83,7 @@ def directory_name_to_area_id(datapath):
 
     Usage:
 
-        >>> directory_name_to_area_id("/data/test/AOI_2_Vegas")
+        >>> directory_name_to_area_id("/root/data/test/AOI_2_Vegas")
         2
     """
     dir_name = Path(datapath).name
@@ -157,20 +155,17 @@ def _calc_fscore_per_aoi(area_id):
     truth_file = FMT_VALTESTTRUTH_PATH.format(prefix)
     poly_file = FMT_VALTESTPOLY_PATH.format(prefix)
 
-    print('truth_file: ', truth_file)
-    print('poly_file: ', poly_file)
-
     cmd = [
         'java',
         '-jar',
-        os.environ['PROJ_BASE_PATH'] + '/visualizer-2.0/visualizer.jar',
+        '/root/visualizer-2.0/visualizer.jar',
         '-truth',
         truth_file,
         '-solution',
         poly_file,
         '-no-gui',
         '-band-triplets',
-        os.environ['PROJ_BASE_PATH'] + '/visualizer-2.0/data/band-triplets.txt',
+        '/root/visualizer-2.0/data/band-triplets.txt',
         '-image-dir',
         'pass',
     ]
