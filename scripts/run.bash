@@ -48,6 +48,13 @@ if [[ $RUN_TRAIN -eq 1 ]]; then
   echo ">>>>>>>>>> v13.py: Parametr optimization for v13 model"
   python /root/code/v13.py evalfscore $TRAIN_PATH || exit 1
 
+  ### v16 --------------
+  #echo ">>>>>>>>>> v16.py"
+  #python /root/code/v16.py validate $train_path
+
+  #echo ">>>>>>>>>> v16.py"
+  #python /root/code/v16.py evalfscore $train_path
+
   ### v17 --------------
   echo ">>>>>>>>>> v17.py"
   python /root/code/v17.py evalfscore $TRAIN_PATH || exit 1
@@ -68,6 +75,9 @@ if [[ $RUN_TEST -eq 1 ]]; then
 
   echo ">>>" python v12_im.py preproc_test $TEST_PATH
   python /root/code/v12_im.py preproc_test $TEST_PATH || exit 1
+
+  #echo ">>>" python v16.py preproc_test $test_path
+  #python /root/code/v16.py preproc_test $test_path
 
   echo ">>> INFERENCE STEP"
   echo ">>>" python v17.py testproc $TEST_PATH
