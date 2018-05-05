@@ -34,6 +34,9 @@ if [[ $RUN_TRAIN -eq 1 ]]; then
   echo python v12_im.py preproc_train $TRAIN_PATH
   python /root/code/v12_im.py preproc_train $TRAIN_PATH || exit 1
 
+  # echo python v16.py preproc_train $train_path
+  # python v16.py preproc_train $train_path
+
   echo ">>> TRAINING v9s model"
   echo python v9s.py validate $TRAIN_PATH
   python /root/code/v9s.py validate $TRAIN_PATH  || exit 1
