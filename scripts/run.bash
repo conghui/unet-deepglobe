@@ -34,8 +34,8 @@ if [[ $RUN_TRAIN -eq 1 ]]; then
   echo python v12_im.py preproc_train $TRAIN_PATH
   python /root/code/v12_im.py preproc_train $TRAIN_PATH || exit 1
 
-  # echo python v16.py preproc_train $train_path
-  # python v16.py preproc_train $train_path
+  # echo python v16.py preproc_train $TRAIN_PATH
+  # python v16.py preproc_train $TRAIN_PATH
 
   echo ">>> TRAINING v9s model"
   echo python v9s.py validate $TRAIN_PATH
@@ -53,10 +53,10 @@ if [[ $RUN_TRAIN -eq 1 ]]; then
 
   ### v16 --------------
   #echo ">>>>>>>>>> v16.py"
-  #python /root/code/v16.py validate $train_path
+  #python /root/code/v16.py validate $TRAIN_PATH
 
   #echo ">>>>>>>>>> v16.py"
-  #python /root/code/v16.py evalfscore $train_path
+  #python /root/code/v16.py evalfscore $TRAIN_PATH
 
   ### v17 --------------
   echo ">>>>>>>>>> v17.py"
@@ -79,8 +79,8 @@ if [[ $RUN_TEST -eq 1 ]]; then
   echo ">>>" python v12_im.py preproc_test $TEST_PATH
   python /root/code/v12_im.py preproc_test $TEST_PATH || exit 1
 
-  #echo ">>>" python v16.py preproc_test $test_path
-  #python /root/code/v16.py preproc_test $test_path
+  #echo ">>>" python v16.py preproc_test $TEST_PATH
+  #python /root/code/v16.py preproc_test $TEST_PATH
 
   echo ">>> INFERENCE STEP"
   echo ">>>" python v17.py testproc $TEST_PATH
