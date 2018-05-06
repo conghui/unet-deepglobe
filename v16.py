@@ -11,6 +11,7 @@ import json
 import pickle
 import re
 import warnings
+import os
 
 from sklearn.datasets.base import Bunch
 from skimage.draw import polygon
@@ -50,14 +51,14 @@ INPUT_SIZE = 256
 STRIDE_SZ = 197
 
 LOGFORMAT = '%(asctime)s %(levelname)s %(message)s'
-BASE_DIR = "/data/train"  # train data
-BASE_TEST_DIR = "/data/test"  # test data
-WORKING_DIR = "/data/working"
-IMAGE_DIR = "/data/working/images/{}".format('v16')
-V12_IMAGE_DIR = "/data/working/images/{}".format('v12')  # for mask and mul
-V5_IMAGE_DIR = "/data/working/images/{}".format('v5')
-MODEL_DIR = "/data/working/models/{}".format(MODEL_NAME)
-FN_SOLUTION_CSV = "/data/output/{}.csv".format(MODEL_NAME)
+BASE_DIR        = "/root/data/train"  # train data
+BASE_TEST_DIR   = "/root/data/test"  # test data
+WORKING_DIR     = "/root/data/working"
+IMAGE_DIR       = "/root/data/working/images/{}".format('v16')
+V12_IMAGE_DIR   = "/root/data/working/images/{}".format('v12')  # for mask and mul
+V5_IMAGE_DIR    = "/root/data/working/images/{}".format('v5')
+MODEL_DIR       = "/root/data/working/models/{}".format(MODEL_NAME)
+FN_SOLUTION_CSV = "/root/data/output/{}.csv".format(MODEL_NAME)
 
 # ---------------------------------------------------------
 # Parameters
@@ -137,7 +138,8 @@ FMT_VALMODEL_LAST_PATH = MODEL_DIR + "/{}_val_weights_last.h5"
 FMT_FULLMODEL_LAST_PATH = MODEL_DIR + "/{}_full_weights_last.h5"
 
 # OSM dataset (Extracted from https://mapzen.com/data/metro-extracts/)
-FMT_OSMSHAPEFILE = "/root/osmdata/{name:}/{name:}_{layer:}.shp"
+# FMT_OSMSHAPEFILE = "/root/osmdata/{name:}/{name:}_{layer:}.shp"
+FMT_OSMSHAPEFILE = "/root/osmdata/{name:}/{name:}-{layer:}.shp"
 FMT_SERIALIZED_OSMDATA = WORKING_DIR + "/osm_{}_subset.pkl"
 LAYER_NAMES = [
     'buildings',
@@ -303,10 +305,10 @@ def area_id_to_prefix(area_id):
 
 def area_id_to_osmprefix(area_id):
     area_id_to_osmprefix_dict = {
-        2: 'las-vegas_nevada_osm',
-        3: 'paris_france_osm',
-        4: 'shanghai_china_osm',
-        5: 'ex_s2cCo6gpCXAvihWVygCAfSjNVksnQ_osm',
+        2: 'las-vegas.osm',
+        3: 'paris.osm',
+        4: 'shanghai.osm',
+        5: 'khartoum.osm',
     }
     return area_id_to_osmprefix_dict[area_id]
 
@@ -1160,10 +1162,10 @@ def location_summary_test(area_id, datapath):
 
 def get_mapzen_osm_name(area_id):
     area_id_to_mapzen_name = {
-        2: 'las-vegas_nevada_osm',
-        3: 'paris_france_osm',
-        4: 'shanghai_china_osm',
-        5: 'ex_s2cCo6gpCXAvihWVygCAfSjNVksnQ_osm',
+        2: 'las-vegas.osm',
+        3: 'paris.osm',
+        4: 'shanghai.osm',
+        5: 'khartoum.osm',
     }
     mapzen_name = area_id_to_mapzen_name[area_id]
     return mapzen_name
@@ -1206,7 +1208,7 @@ def extract_landusages_industrial_geoms(area_id):
     geoms = [
         geom
         for geom, type_name, properties in osm['landusages']
-        if type_name == 'area' and properties['type'] == 'industrial'
+        if type_name == 'area' and properties['fclass'] == 'industrial'
     ]
     return geoms
 
@@ -1220,9 +1222,9 @@ def extract_landusages_farm_and_forest_geoms(area_id):
     geoms = [
         geom
         for geom, type_name, properties in osm['landusages']
-        if type_name == 'area' and properties['type'] in [
+        if type_name == 'area' and properties['fclass'] in [
             'forest',
-            'farmyard',
+            'farm',
         ]
     ]
     return geoms
@@ -1237,7 +1239,7 @@ def extract_landusages_residential_geoms(area_id):
     geoms = [
         geom
         for geom, type_name, properties in osm['landusages']
-        if type_name == 'area' and properties['type'] == 'residential'
+        if type_name == 'area' and properties['fclass'] == 'residential'
     ]
     return geoms
 
@@ -1251,7 +1253,7 @@ def extract_roads_geoms(area_id):
     geoms = [
         geom
         for geom, type_name, properties in osm['roads']
-        if type_name == 'line' and properties['type'] != 'subway'
+        if type_name == 'line' and properties['fclass'] != 'subway'
     ]
     return geoms
 
@@ -1356,10 +1358,14 @@ def prep_osmlayer_train(area_id, datapath, is_valtrain=False):
 
     layers = extract_osmlayers(area_id)
 
+    print('conghui: fn_list: ', fn_list)
     df = pd.read_csv(fn_list, index_col='ImageId')
     logger.info("Prep osm container: {}".format(fn_store))
+    # print (df)
+    #print (layers)
     with tb.open_file(fn_store, 'w') as f:
         df_sz = len(df)
+        print (df_sz)
         for image_id in tqdm.tqdm(df.index, total=df_sz):
             # fn_tif = train_image_id_to_path(image_id)
             fn_tif = get_train_image_path_from_imageid(
@@ -1368,6 +1374,7 @@ def prep_osmlayer_train(area_id, datapath, is_valtrain=False):
                 values = fr.read(1)
                 masks = []  # rasterize masks
                 for layer_geoms in layers:
+                    # print (layer_geoms)
                     mask = rasterio.features.rasterize(
                         layer_geoms,
                         out_shape=values.shape,
@@ -1439,10 +1446,12 @@ def preproc_osm(area_id, datapath, is_train=True):
             with fiona.open(fn_shp, 'r') as vector:
                 print("{}: {}".format(layer_name, len(vector)))
                 geoms = []
+                
                 for feat in tqdm.tqdm(vector, total=len(vector)):
                     try:
                         geom = shapely.geometry.shape(feat['geometry'])
                         isec_area = geom.intersection(geom_bounds).area
+                        #print(isec_area)
                         if isec_area > 0:
                             geoms.append([
                                 geom, 'area', feat['properties'],
@@ -1462,6 +1471,7 @@ def preproc_osm(area_id, datapath, is_train=True):
 
         with open(fn_osm, 'wb') as f:
             pickle.dump(geom_layers, f)
+        #exit(0)
 
 
 @click.group()
