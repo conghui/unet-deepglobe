@@ -53,7 +53,7 @@ MODEL_DIR       = "/root/data/working/models/{}".format(MODEL_NAME)
 FN_SOLUTION_CSV = "/root/data/output/{}.csv".format(MODEL_NAME)
 
 # Parameters
-MIN_POLYGON_AREA = 30
+MIN_POLYGON_AREA = 150
 
 # Input files
 FMT_TRAIN_SUMMARY_PATH = str(
@@ -1744,10 +1744,10 @@ def evalfscore(datapath):
 
     # optimize min area th
     rows = []
-    for th in [30, 60, 90, 120, 150, 180, 210, 240]:
+    for th in [150, 240]:
         logger.info(">>> TH: {}".format(th))
         predict_flag = False
-        if th == 30:
+        if th == 150:
             predict_flag = True
 
         _internal_validate_fscore(

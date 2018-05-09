@@ -53,7 +53,7 @@ V5_IMAGE_DIR  = "/root/data/working/images/{}".format('v5')
 
 # ---------------------------------------------------------
 # Parameters
-MIN_POLYGON_AREA = 30  # 30
+MIN_POLYGON_AREA = 150  # 30
 
 # ---------------------------------------------------------
 # Input files
@@ -1749,10 +1749,10 @@ def evalfscore(datapath):
 
     # optimize min area th
     rows = []
-    for th in [30, 60, 90, 120, 150, 180, 210, 240]:
+    for th in [150, 240]:
         logger.info(">>> TH: {}".format(th))
         predict_flag = False
-        if th == 30:
+        if th == 150:
             predict_flag = True
 
         _internal_validate_fscore(

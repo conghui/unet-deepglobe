@@ -607,7 +607,7 @@ def evalfscore(datapath):
 
     # Ensemble individual models and write output files
     rows = []
-    for th in [30, 60, 90, 120, 150, 180, 210, 240]:
+    for th in [150, 210, 240]:
         logger.info(">>> TH: {}".format(th))
 
         _internal_pred_to_poly_file(
