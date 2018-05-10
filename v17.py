@@ -561,6 +561,19 @@ def testproc(datapath):
         # slice_pred_list=[y_pred_1, y_pred_2],
     )
 
+    # Save prediction result
+    FMT_TESTPRED_PATH = MODEL_DIR + "/{}_pred.h5"
+    fn = FMT_TESTPRED_PATH.format(prefix)
+    with tb.open_file(fn, 'w') as f:
+         atom = tb.Atom.from_dtype(y_pred.dtype)
+         filters = tb.Filters(complib='blosc', complevel=9)
+         ds = f.create_carray(f.root,
+                               'pred',
+                               atom,
+                               y_pred.shape,
+                               filters=filters)
+         ds[:] = y_pred
+
     # pred to polygon
     param = get_model_parameter(area_id)
     _internal_pred_to_poly_file_test(
